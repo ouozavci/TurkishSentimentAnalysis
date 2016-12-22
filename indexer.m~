@@ -1,0 +1,51 @@
+function result = indexer()
+    file_positive = fopen('positive.txt','r');
+    file_negative = fopen('negative.txt','r');
+    
+    count_map = containers.Map('KeyType','char','ValueType','int32');
+    df_map = containers.Map('KeyType','char','ValueType','int32');
+    
+   % positiveComments = cell(1,1);
+   % negativeComments = cell(1,1);
+    line = fgetl(file_positive);
+    i=1;  
+    
+    %positive.txt dosyasından kelimeler line olarak alınıyor.
+    while ischar(line)
+          line = regexprep(line,'[^A-Za-z_ğüşıöçĞÜŞİÖÇ]',' ');
+          line=lower(line);
+          %positiveComments(i,1) = java.lang.String(line);
+          line = strsplit(line);
+          
+          %line içindeki kelimeler teker teker ele alınıp uygun olanlar map
+          %e ekleniyor.
+          for j=1:length(line)
+              %3 harften kısa kelimeleri dikkate alma
+          if(length(char(line(1,j)))<3)
+              continue;
+          end    
+                if count_map.isKey(char(line(1,j)))
+                    val = map(char(line(1,j)));
+                    count_map(char(line(1,j))) = val+1;
+                else
+                    count_map(char(line(1,j))) = 1;
+                end 
+                
+          end      
+       %   disp(line);line
+          line=fgetl(file_positive);
+        i=i+1;
+    end
+    fclose(file_positive);
+
+%     i=1;       wh 
+%     while ischar(line)
+%         negativeComments(i,1) = java.lang.String(line);
+%         line = fgetl(file_negative);
+%         i=i+1;
+%   end
+ 
+    fclose(file_negative);
+    
+    result = map;
+end
