@@ -21,6 +21,7 @@ function result = indexer()
           
           %line içindeki kelimeler teker teker ele alınıp uygun olanlar map
           %e ekleniyor.
+          tmp = containers.Map('KeyType','char','ValueType','int32');
           for j=1:length(line)
                word = char(line(1,j));
            
@@ -37,11 +38,23 @@ function result = indexer()
               %kelimeleri map'e ekle  
                 if count_map.isKey(word)
                     val = count_map(word);
-                    count_map(word) = val+1;
+                    count_mapint(word) = val+1;
                 else
                     count_map(word) = 1;
                 end 
-                
+              
+              %eğer daha önce eklenmdiyse
+              
+                if(~tmp.isKey(word))
+                    tmp(word) = 1;
+                 %kelimeleri df mapine ekle
+                    if df_map.isKey(word)
+                        val = df_map(word);
+                        df_map(word) = val + 1;
+                    else    
+                        df_map(word) = 1;
+                    end    
+                end
           end
           line=fgetl(file_positive);
         i=i+1;
@@ -57,5 +70,5 @@ function result = indexer()
  
     fclose(file_negative);
     
-    result = count_map;
+    result = df_map;
 end
