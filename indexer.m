@@ -128,16 +128,24 @@ function result = indexer()
         line_count=line_count+1;
     end
  
+    
+    %tf lerin yazılacağı bir cell tablosu oluşturuluyor.
     tf_cell = cell(1);
-    keys = tf_map.keys();
-    for i=1:length(keys)
-        word  = char(keys(1,i));
-        tf_cell{i,1} = word;
-             tmp_cell = tf_map(char(word));
+    keys = tf_map.keys();                           %keyler tf_map ten çekildi
+    for i=1:length(keys)    
+        word  = char(keys(1,i));                    %her kelime ayrı ayrı alınıyor.
+        tf_cell{i,1} = word;                        %ve cellin 1. sütununa yazılıyor
+             tmp_cell = tf_map(char(word));         %ve ilgili kelimenin tf değerlerini içeren cell arrayi alınıyor
              for j = 1 : length(tmp_cell)
-                 tf_cell{i,j+1} = tmp_cell{1,j};
+                 if(~isempty(tmp_cell{1,j}))
+                 tf = tmp_cell{1,j};                %tf değerleri tf mapinden alınıyor.
+                 df = df_map(word);                 %df değerleri df mapinden alınıyor.
+                 idf = double(double(tf) * log(double(line_count/df))); %idf hesaplanıyor
+                 tf_cell{i,j+1} = idf;              %ve diğer sütunlara idf değerleri yazılıyor.
+                 else
+                 tf_cell{i,j+1} = 0;                %eğer tf değeri boş dönmüş ise 0 yazılyor.
+                 end
              end   
-         
     end    
     fclose(file_positive);
  
