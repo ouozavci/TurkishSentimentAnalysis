@@ -2,73 +2,10 @@ function result = indexer()
     file_positive = fopen('positive.txt','r');
     file_negative = fopen('negative.txt','r');
     
-    count_map = containers.Map('KeyType','char','ValueType','int32');
-    df_map = containers.Map('KeyType','char','ValueType','int32');
-    
-   % positiveComments = cell(1,1);
-   % negativeComments = cell(1,1);
-    line = fgetl(file_positive);
-    i=1;  
-    
-    %positive.txt dosyasından kelimeler line olarak alınıyor.
-    while ischar(line)
-        
-          %harf olmayan karakterleri at hepsini küçük harf haline getir ve
-          %boşluklara göre ayır.
-          line = regexprep(line,'[^A-Za-z_ğüşıöçĞÜŞİÖÇ]',' ');
-          line=lower(line);
-          line = strsplit(line);
-          
-          %line içindeki kelimeler teker teker ele alınıp uygun olanlar map
-          %e ekleniyor.
-          tmp = containers.Map('KeyType','char','ValueType','int32');
-          for j=1:length(line)
-               word = char(line(1,j));
-           
-               %3 harften kısa kelimeleri dikkate alma
-                if(length(word)<3)
-                    continue;
-                end
-                
-              %kelimeleri ilk 5 harfine göre stemming et
-                if(length(word)>5)
-                 word = word(1:5);
-                end    
-                
-              %kelimeleri map'e ekle  
-                if count_map.isKey(word)
-                    val = count_map(word);
-                    count_map(word) = val+1;
-                else
-                    count_map(word) = 1;
-                end 
-              
-              %eğer daha önce eklenmdiyse
-              
-                if(~tmp.isKey(word))
-                    tmp(word) = 1;
-                 %kelimeleri df mapine ekle
-                    if df_map.isKey(word)
-                        val = df_map(word);
-                        df_map(word) = val + 1;
-                    else    
-                        df_map(word) = 1;
-                    end    
-                end
-          end
-          line=fgetl(file_positive);
-        i=i+1;
-    end
-    fclose(file_positive);
 
-    %tf idf hesabı için bir kez daha okunması gerekli
-    tfidf_map = containers.Map('KeyType','char','ValueType','int32');
-    
+    df_map = containers.Map('KeyType','char','ValueType','int32');  
     tf_map = containers.Map('KeyType','char','ValueType','any');
     
-    tf_idf = zeros(count_map.length,i);
-    
-    file_positive = fopen('positive.txt','r');
     line = fgetl(file_positive);
     line_count=1;  
     %positive.txt dosyasından kelimeler line olarak alınıyor.
@@ -94,10 +31,16 @@ function result = indexer()
                 if(length(word)>5)
                  word = word(1:5);
                 end    
-                
+         
                %tf hesaplamak için tf say
                 if(~tmp.isKey(word))
                     tmp(word) = 1;
+                    if df_map.isKey(word)   % o ara df i de aradan çıkaralım
+                        val = df_map(word);
+                        df_map(word) = val + 1;
+                    else    
+                        df_map(word) = 1;
+                    end   
                 else
                     val = tmp(word);
                     tmp(word) = val + 1; 
