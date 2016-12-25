@@ -6,6 +6,12 @@ function result = indexer()
     pos_df_map = containers.Map('KeyType','char','ValueType','int32');  
     tf_map = containers.Map('KeyType','char','ValueType','any');
     
+    pos_count_map = containers.Map('KeyType','char','ValueType','int32');
+    neg_count_map = containers.Map('KeyType','char','ValueType','int32');
+    
+    pos_word_count = 0;
+    neg_word_count = 0;
+    
     line = fgetl(file_positive);
     line_count=1;  
     %positive.txt dosyasından kelimeler line olarak alınıyor.
@@ -21,17 +27,27 @@ function result = indexer()
           tmp = containers.Map('KeyType','char','ValueType','int32');
           for j=1:length(line)
                word = char(line(1,j));
-           
+                
                %3 harften kısa kelimeleri dikkate alma
                 if(length(word)<3)
                     continue;
                 end
                 
+                %pozitif kelimelerin sayısı artırılıyor
+                pos_word_count = pos_word_count +1;
+                
+                if pos_count_map.isKey(word)
+                    val = pos_count_map(word);
+                    pos_count_map(word) = val + 1;
+                else
+                    pos_count_map(word) = 1;
+                end    
+                
               %kelimeleri ilk 5 harfine göre stemming et
                 if(length(word)>5)
                  word = word(1:5);
                 end    
-         
+                        
                %tf hesaplamak için tf say
                 if(~tmp.isKey(word))
                     tmp(word) = 1;
@@ -89,12 +105,21 @@ function result = indexer()
           for j=1:length(line)
                word = char(line(1,j));
            
-               %3 harften kısa kelimeleri dikkate alma
+                %3 harften kısa kelimeleri dikkate alma
                 if(length(word)<3)
                     continue;
                 end
                 
-              %kelimeleri ilk 5 harfine göre stemming et
+                %negatif kelimelerin sayısı artırılıyor
+                neg_word_count = neg_word_count + 1; 
+                if neg_count_map.isKey(word)
+                    val = neg_count_map(word);
+                    neg_count_map(word) = val + 1;
+                else
+                    neg_count_map(word) = 1;
+                end    
+                
+                %kelimeleri ilk 5 harfine göre stemming et
                 if(length(word)>5)
                  word = word(1:5);
                 end    
@@ -166,29 +191,56 @@ function result = indexer()
 %     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     
+%     tf_idf_cell = cell(1);
+%     keys = tf_map.keys();
+%     for i=1:length(keys)
+%         word = char(keys(1,i));
+%        
+%             if(pos_df_map.isKey(word))pos_df = pos_df_map(word);
+%             else pos_df=0;
+%             end 
+%              if(neg_df_map.isKey(word))neg_df = neg_df_map(word);
+%             else neg_df=0;
+%              end 
+%         tf_idf_cell{i,1} = word;
+%         tf_idf_cell{i,2} = double(pos_df)*log(double(line_count/(pos_df+neg_df)));
+%         tf_idf_cell{i,3} = double(neg_df)*log(double(line_count/(pos_df+neg_df)));
+%     end
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    tf_idf_cell = cell(1);
+   
+    naive_bayes_cell = cell(1);
     keys = tf_map.keys();
     for i=1:length(keys)
         word = char(keys(1,i));
-       
-            if(pos_df_map.isKey(word))pos_df = pos_df_map(word);
-            else pos_df=0;
-            end 
-             if(neg_df_map.isKey(word))neg_df = neg_df_map(word);
-            else neg_df=0;
-             end 
-        tf_idf_cell{i,1} = word;
-        tf_idf_cell{i,2} = double(pos_df)*log(double(line_count/(pos_df+neg_df)));
-        tf_idf_cell{i,3} = double(neg_df)*log(double(line_count/(pos_df+neg_df)));
+        if pos_count_map.isKey(word)
+            pos_count = double(pos_count_map(word));
+        else 
+            pos_count = 0;
+        end    
+        if neg_count_map.isKey(word)
+            neg_count = double(neg_count_map(word));
+        else 
+            neg_count = 0;
+        end  
+             
+            bayes_pos = (pos_count + 1)/double(pos_word_count+length(keys)); 
+            bayes_neg = (neg_count + 1)/double(neg_word_count+length(keys)); 
+            
+            if(bayes_pos == 0 && bayes_neg == 0)
+                disp('a');
+            end
+            naive_bayes_cell{i,1} = word;
+            naive_bayes_cell{i,2} = bayes_pos;
+            naive_bayes_cell{i,3} = bayes_neg;
     end
-    
     %fileları kapatalım
     fclose(file_positive);
     fclose(file_negative);
   
-    save('index.mat',tf_idf_cell);
+    %save('index.mat',naive_bayes_cell);
     
     %
-    result = tf_idf_cell;
+    result = naive_bayes_cell;
 end
