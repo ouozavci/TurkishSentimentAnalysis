@@ -13,7 +13,8 @@ function result = indexer()
     neg_word_count = 0;
     
     line = fgetl(file_positive);
-    line_count=1;  
+    line_count=1; 
+    pos_line_count = 0;
     %positive.txt dosyasından kelimeler line olarak alınıyor.
     while ischar(line)
           %harf olmayan karakterleri at hepsini küçük harf haline getir ve
@@ -85,10 +86,11 @@ function result = indexer()
           end   
           line=fgetl(file_positive);
         line_count=line_count+1;
+        pos_line_count=pos_line_count+1;
     end
  
     neg_df_map = containers.Map('KeyType','char','ValueType','int32');  
-    
+    neg_line_count = 0;
     line = fgetl(file_negative);
      
     %positive.txt dosyasından kelimeler line olarak alınıyor.
@@ -161,6 +163,7 @@ function result = indexer()
           end   
           line=fgetl(file_negative);
         line_count=line_count+1;
+        neg_line_count=neg_line_count+1;
     end
  
     stop_words = containers.Map('KeyType','char','ValueType','int32');   
@@ -207,13 +210,60 @@ function result = indexer()
 %         tf_idf_cell{i,2} = double(pos_df)*log(double(line_count/(pos_df+neg_df)));
 %         tf_idf_cell{i,3} = double(neg_df)*log(double(line_count/(pos_df+neg_df)));
 %     end
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   %INFORMATION GAIN PART
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    
+   ig_cell = cell(1);
+   keys = tf_map.keys();
+   for i = 1:length(keys)
+        word = char(keys(1,i));
+        if pos_df_map.isKey(word)
+            pos_df = double(pos_df_map(word));
+        else
+            pos_df = 0.0;
+        end
+         if neg_df_map.isKey(word)
+            neg_df = double(neg_df_map(word));
+        else
+            neg_df = 0.0;
+         end
+              
+         pPos = pos_line_count/(line_count-1);
+         pNeg = neg_line_count/(line_count-1);
+         
+         pWord = (pos_df+neg_df)/(line_count-1);
+         
+         pPosWord = pos_df/(pos_df+neg_df);
+         pNegWord = neg_df/(pos_df+neg_df);
+         
+         pPosNotWord = (pos_line_count - pos_df)/(line_count-1 - (pos_df+neg_df));
+         pNegNotWord = (neg_line_count - neg_df)/(line_count-1 - (pos_df+neg_df));
+         
+         if pPosWord == 0 pPosWord=1; end
+         if pNegWord == 0 pNegWord=1; end
+         if pPosNotWord == 0 pPosWord=1; end
+         if pNegNotWord == 0 pNegWord=1; end
+         
+        IGPoint = -(pPos*log(pPos) + pNeg*log(pNeg))+(pWord*(pPosWord*log10(pPosWord)+pNegWord*log10(pNegWord)))+((1-pWord)*(pPosNotWord*log10(pPosNotWord)+pNegNotWord*log10(pNegNotWord)));
+        
+        if isnan(IGPoint)
+            IGPoint = 0;
+        end    
+        
+        ig_cell{i,1} = word;
+        ig_cell{i,2} = IGPoint;
+        
+        ig_cell = sortrows(ig_cell,-2);
+          
+   end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     naive_bayes_cell = cell(1);
     keys = tf_map.keys();
-    for i=1:length(keys)
-        word = char(keys(1,i));
+    for i=1:1500
+        word = char(ig_cell(i,1));
         if pos_count_map.isKey(word)
             pos_count = double(pos_count_map(word));
         else 
@@ -225,8 +275,8 @@ function result = indexer()
             neg_count = 0;
         end  
              
-            bayes_pos = (pos_count + 1)/double(pos_word_count+length(keys)); 
-            bayes_neg = (neg_count + 1)/double(neg_word_count+length(keys)); 
+            bayes_pos = (pos_count + 1)/double(pos_word_count+1500); 
+            bayes_neg = (neg_count + 1)/double(neg_word_count+1500); 
             
             if(bayes_pos == 0 && bayes_neg == 0)
                 disp('a');
