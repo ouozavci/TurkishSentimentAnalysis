@@ -1,7 +1,14 @@
 function [result] = classify(comment)
     
-    load('index.mat');
-    
+    if exist('index.mat')
+        load('index.mat');
+    else 
+        disp('Run the indexer first!')
+        result = 0;
+        return;
+    end    
+        
+        
     comment = regexprep(comment,'[^A-Za-z_ğüşıöçĞÜŞİÖÇ]',' ');
     comment = lower(comment);
     comment = strsplit(comment);
